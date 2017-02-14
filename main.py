@@ -15,11 +15,125 @@
 # limitations under the License.
 #
 import webapp2
+import re
 
-class MainHandler(webapp2.RequestHandler):
+
+USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
+def valid_username(username):
+    return username and USER_RE.match(username)
+
+USER_RE = re.compile(r"^.{3,20}$")
+def valid_password(password):
+    return password and USER_RE.match(password)
+
+USER_RE = re.compile(r"^[\S]+@[\S]+.[\S]+$")
+def valid_email(email):
+    return not email or USER_RE.match(email)
+
+
+def welcome_page(confirmed_username):
+    welcome = """
+    <html>
+        <head>
+            <title>Signup Page</title>
+        </head>
+        <body>""" + "<h2>Welcome," + confirmed_username + "</h2></body><html>"
+
+    return welcome
+
+
+def show_page(username, error_username, password, error_password, verify, error_verify, email, error_email):
+
+
+    username_label = "<label>Username:</label>"
+    username_input = "<input type='text' name='username' value=" + username + "><td class = 'error'>" + error_username + "</td>"
+
+#ask me about html tags for errors
+    password_label = "<label>Password:</label>"
+    password_input = "<input type='text' name='password' value=''/><td class = 'error'>" + error_password + "</td>"
+
+    verify_password_label = "<label>Confirm Password:</label>"
+    verify_password_input = "<input type='text' name='verify' value=''/><td class ='error'>" + error_verify + "</td>"
+
+    email_label = "<label>Email:</label>"
+    email_input = "<input type='text' name='email' value=" + email +"><td class = 'error'>" + error_email + "</td>"
+
+    submit = "<input type='submit'/>"
+
+    form = ("<form action='/validation' method='post'>"
+        + username_label + username_input + "<br>"
+        + password_label+ password_input + "<br>"
+        + verify_password_label+ verify_password_input + "<br>"
+        + email_label+ email_input + "<br>"
+        + submit
+        + "</form>")
+
+    return form
+
+
+params = {'username': "", 'password': "", 'verify': "", 'email': "", 'error_username': "", 'error_password': "", 'error_verify': "", 'error_email': ""}
+
+
+class FormHandler(webapp2.RequestHandler):
     def get(self):
-        self.response.write('Hello world!')
+
+        #intialize with empty values
+        #username, error_username, password, error_password, verify, error_verify, email, error_email
+
+        content = show_page(params['username'], params['error_username'], params['password'], params['error_password'], params['verify'], params['error_verify'], params['email'], params['error_email'])
+
+        self.response.write(content)
+
+
+
+
+
+class ValidationHandler(FormHandler):
+        def post(self):
+            have_error = False
+            username = self.request.get("username")
+            params['username'] = username
+            password = self.request.get("password")
+            verify = self.request.get("verify")
+            email = self.request.get("email")
+            params['email'] = email
+
+            # params = {"username" : username,
+                            # "email" : email)
+    # if then shit
+
+            if not valid_username(username):
+                params['error_username'] = "That is not a valid username."
+                have_error = True
+
+            if not valid_password(password):
+                params['error_password'] = "That is not a valid password."
+                have_error = True
+            elif not password != verify:
+                params['error_verify'] = "Your passwords do not match."
+                have_error = True
+
+            if not valid_email(email):
+                params['error_email'] = "That is not a valid email."
+                have_error = True
+
+    #within if then call validation method
+
+            if have_error:
+
+                content = show_page(params['username'], params['error_username'], params['password'], params['error_password'], params['verify'], params['error_verify'], params['email'], params['error_email'])
+
+                self.response.write(content)
+
+            else:
+                self.response.write(welcome_page(username))
+
+
+
+
+
 
 app = webapp2.WSGIApplication([
-    ('/', MainHandler)
+    ('/', FormHandler),
+    ('/validation', ValidationHandler)
 ], debug=True)
