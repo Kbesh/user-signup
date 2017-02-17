@@ -22,29 +22,15 @@ USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
 def valid_username(username):
     return username and USER_RE.match(username)
 
-USER_RE = re.compile(r"^.{3,20}$")
+PASSWORD_RE = re.compile(r"^.{3,20}$")
 def valid_password(password):
-    return password and USER_RE.match(password)
+    return password and PASSWORD_RE.match(password)
 
-USER_RE = re.compile(r"^[\S]+@[\S]+.[\S]+$")
+EMAIL_RE = re.compile(r"^[\S]+@[\S]+.[\S]+$")
 def valid_email(email):
-    return not email or USER_RE.match(email)
+    return not email or EMAIL_RE.match(email)
 
-
-def welcome_page(confirmed_username):
-    welcome = """
-    <html>
-        <head>
-            <title>Signup Page</title>
-        </head>
-        <body>""" + "<h2>Welcome," + confirmed_username + "</h2></body><html>"
-
-    return welcome
-
-
-def show_page(username, error_username, password, error_password, verify, error_verify, email, error_email):
-
-
+def show_page(username, error_username, error_password, error_verify, email, error_email):
     username_label = "<label>Username:</label>"
     username_input = "<input type='text' name='username' value=" + username + "><td class = 'error'>" + error_username + "</td>"
 
@@ -71,26 +57,28 @@ def show_page(username, error_username, password, error_password, verify, error_
     return form
 
 
-params = {'username': "", 'password': "", 'verify': "", 'email': "", 'error_username': "", 'error_password': "", 'error_verify': "", 'error_email': ""}
 
+def welcome_page(confirmed_username):
+    welcome = """
+    <html>
+        <head>
+            <title>Signup Page</title>
+        </head>
+        <body>""" + "<h2>Welcome, " + confirmed_username + "</h2></body><html>"
+
+    return welcome
 
 class FormHandler(webapp2.RequestHandler):
     def get(self):
-
+        params = {'username': "", 'email': "", 'error_username': "", 'error_password': "", 'error_verify': "", 'error_email': ""}
         #intialize with empty values
         #username, error_username, password, error_password, verify, error_verify, email, error_email
-
-        content = show_page(params['username'], params['error_username'], params['password'], params['error_password'], params['verify'], params['error_verify'], params['email'], params['error_email'])
-
+        content = show_page(params['username'], params['error_username'], params['error_password'], params['error_verify'], params['email'], params['error_email'])
         self.response.write(content)
-
-
-
-
 
 class ValidationHandler(FormHandler):
         def post(self):
-            have_error = False
+            params ={}
             username = self.request.get("username")
             params['username'] = username
             password = self.request.get("password")
@@ -102,36 +90,42 @@ class ValidationHandler(FormHandler):
                             # "email" : email)
     # if then shit
 
+
+            have_error = False
+
+            params['error_verify'] = ""
+            params['error_email'] = ""
+            params['error_password'] = ""
+            params['error_username'] = ""
+
             if not valid_username(username):
                 params['error_username'] = "That is not a valid username."
                 have_error = True
 
+
             if not valid_password(password):
                 params['error_password'] = "That is not a valid password."
                 have_error = True
-            elif not password != verify:
+
+            elif password != verify:
                 params['error_verify'] = "Your passwords do not match."
                 have_error = True
+
 
             if not valid_email(email):
                 params['error_email'] = "That is not a valid email."
                 have_error = True
 
+
+
+
+
     #within if then call validation method
-
-            if have_error:
-
-                content = show_page(params['username'], params['error_username'], params['password'], params['error_password'], params['verify'], params['error_verify'], params['email'], params['error_email'])
-
+            if have_error == True:
+                content = show_page(params['username'], params['error_username'], params['error_password'], params['error_verify'], params['email'], params['error_email'])
                 self.response.write(content)
-
             else:
                 self.response.write(welcome_page(username))
-
-
-
-
-
 
 app = webapp2.WSGIApplication([
     ('/', FormHandler),
